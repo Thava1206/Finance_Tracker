@@ -15,6 +15,7 @@ let transactionsData = [
     { id: 9, description: 'New headphones', amount: 89.99, type: 'expense', category: 'shopping', date: '2026-11-14' },
     { id: 10, description: 'Groceries', amount: 41.10, type: 'expense', category: 'food', date: '2026-11-16' }
 ];
+let counter = 11;
 app.get('/api/transactions', (req,res)=> {
     const formattedTransaction = transactionsData.map(item => ({
         description: item.description,
@@ -35,6 +36,77 @@ app.get('/api/transactions/:id', (req,res) => {
         category : transactionsId.category,
         date : transactionsId.date
     })
+});
+app.post('/api/transactions', (req,res)=> {
+    const {description,amount,type,category} = req.body;
+    const today = new Date;
+    const year = today.getFullYear();
+    const month= today.getMonth() + 1;
+    const day = today.getDate();
+    const date = `${year}-${month}-${day}`;
+    if (!description) {
+        return res.status(418).send({message : 'We need a description'});
+    }
+    if (!amount) {
+        return res.status(418).send({message : 'We need a amount'});
+    }
+    if (!type) {
+        return res.status(418).send({message : 'We need a type'});
+    }
+    if (!category) {
+        return res.status(418).send({message : 'We need a category'});
+    }
+    const newTransaction = {
+        id : counter,
+        description : description,
+        amount : amount,
+        type : type,
+        category : category,
+        date : date
+    }
+    counter++;
+    transactionsData.push(newTransaction);
+    res.status(201).send(newTransaction);
+    
+});
+app.put('/api/transactions/:id', (req,res)=> {
+    const { id } = req.params;
+    const {description,amount,type,category} = req.body;
+    const index = transactionsData.findIndex((item) => String(item.id) === id);
+    if (index === -1) {
+        return res.status(404).send({message : 'transaction not found'});
+    }
+    if (!description) {
+        return res.status(400).send({message : 'We need a description'});
+    }
+    if (!amount) {
+        return res.status(400).send({message : 'We need a amount'});
+    }
+    if (!type) {
+        return res.status(400).send({message : 'We need a type'});
+    }
+    if (!category) {
+        return res.status(400).send({message : 'We need a category'});
+    }
+
+    const updatedTransaction = {
+        id : transactionsData[index].id,
+        description : description,
+        amount : amount,
+        type : type,
+        category : category,
+        date : transactionsData[index].date
+    }
+    transactionsData[index] = updatedTransaction;
+    res.status(200).send(updatedTransaction);
+});
+app.delete('/api/transactions/:id', (req,res) => {
+    const { id } = req.params;
+    
+    const index = transactionsData.findIndex((item) => String(item.id) === id);
+
+    transactionsData.splice(index, 1);
+    res.status(200).send(transactionsData);
 });
 app.listen(
     port,

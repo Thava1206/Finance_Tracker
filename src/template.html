@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finance Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="app">
+      <h1 class="appTitle">Finance Tracker</h1>
+
+      <!-- Balance panel: numbers are filled in by updateSummary() in index.js -->
+      <section class="summary" aria-label="Balance">
+        <p class="summaryLabel">Balance</p>
+        <p class="balance" id="balance">$0.00</p>
+        <!-- The bar shows how much of your money flow is income (green) vs expenses (red) -->
+        <div class="split" aria-hidden="true">
+          <span class="splitIncome" id="splitIncome"></span>
+        </div>
+        <dl class="totals">
+          <div class="total incomeTotal">
+            <dt>Money in</dt>
+            <dd id="totalIncome">$0.00</dd>
+          </div>
+          <div class="total expenseTotal">
+            <dt>Money out</dt>
+            <dd id="totalExpense">$0.00</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Clicking this hides the button and shows the form below -->
+      <button id="addButton" class="button primary addButton" type="button">
+        Add transaction
+      </button>
+
+      <!-- "hidden" means the form starts closed -->
+      <form class="TransactionForm" hidden>
+        <h2 class="formTitle">New transaction</h2>
+        <div class="fields">
+          <div class="field wide">
+            <label for="description">Description</label>
+            <input id="description" type="text" placeholder="e.g. Groceries" required />
+          </div>
+          <div class="field">
+            <label for="amount">Amount</label>
+            <!-- step="0.01" lets you type cents like 41.10 (without it, decimals get rejected) -->
+            <input id="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required />
+          </div>
+          <div class="field">
+            <label for="type">Type</label>
+            <select name="type" id="type">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+          <div class="field wide">
+            <label for="category">Category</label>
+            <select name="category" id="category" required>
+              <option value="salary">Salary</option>
+              <option value="side-gig">Side gig</option>
+              <option value="food">Food</option>
+              <option value="rent">Rent</option>
+              <option value="transport">Transport</option>
+              <option value="entertainment">Entertainment</option>
+              <option value="bills">Bills</option>
+              <option value="shopping">Shopping</option>
+              <option value="miscallenous-item">Miscellaneous</option>
+              <option value="other-income">Other income</option>
+            </select>
+          </div>
+        </div>
+        <!-- Shown only if saving fails -->
+        <p class="formError" id="formError" role="alert" hidden></p>
+        <div class="formActions">
+          <!-- type="button" so Cancel doesn't submit the form -->
+          <button id="cancelButton" class="button ghost" type="button">Cancel</button>
+          <button id="Submit" class="button primary" type="submit">Save transaction</button>
+        </div>
+      </form>
+
+      <section class="history">
+        <h2 class="historyTitle">Transactions</h2>
+        <ul id="transactions" class="transactionList"></ul>
+      </section>
+    </main>
+  </body>
+</html>

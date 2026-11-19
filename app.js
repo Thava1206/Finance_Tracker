@@ -45,16 +45,16 @@ app.post('/api/transactions', (req,res)=> {
     const day = today.getDate();
     const date = `${year}-${month}-${day}`;
     if (!description) {
-        return res.status(418).send({message : 'We need a description'});
+        return res.status(404).send({message : 'We need a description'});
     }
     if (!amount) {
-        return res.status(418).send({message : 'We need a amount'});
+        return res.status(404).send({message : 'We need a amount'});
     }
     if (!type) {
-        return res.status(418).send({message : 'We need a type'});
+        return res.status(404).send({message : 'We need a type'});
     }
     if (!category) {
-        return res.status(418).send({message : 'We need a category'});
+        return res.status(404).send({message : 'We need a category'});
     }
     const newTransaction = {
         id : counter,

@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "build": "webpack",
+    "dev": "webpack serve"
   },
   "repository": {
     "type": "git",
@@ -19,5 +22,14 @@
   "homepage": "https://github.com/Thava1206/Finance_Tracker#readme",
   "dependencies": {
     "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.5",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.8",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.112.2",
+    "webpack-cli": "^7.3.1",
+    "webpack-dev-server": "^6.1.0"
   }
 }

@@ -1,114 +1,90 @@
 const express = require('express');
 const app = express();
 const port = 3000;
+const db = require('./db');
 app.use(express.json());
 
-let transactionsData = [
-    { id: 1, description: 'Paycheck', amount: 1200.00, type: 'income', category: 'salary', date: '2026-11-01' },
-    { id: 2, description: 'Rent', amount: 650.00, type: 'expense', category: 'rent', date: '2026-11-01' },
-    { id: 3, description: 'Groceries', amount: 54.32, type: 'expense', category: 'food', date: '2026-11-03' },
-    { id: 4, description: 'Gas', amount: 38.75, type: 'expense', category: 'transport', date: '2026-11-05' },
-    { id: 5, description: 'Spotify', amount: 11.99, type: 'expense', category: 'entertainment', date: '2026-11-06' },
-    { id: 6, description: 'Chick-fil-A', amount: 12.48, type: 'expense', category: 'food', date: '2026-11-08' },
-    { id: 7, description: 'Tutoring', amount: 80.00, type: 'income', category: 'side-gig', date: '2026-11-10' },
-    { id: 8, description: 'Phone bill', amount: 45.00, type: 'expense', category: 'bills', date: '2026-11-12' },
-    { id: 9, description: 'New headphones', amount: 89.99, type: 'expense', category: 'shopping', date: '2026-11-14' },
-    { id: 10, description: 'Groceries', amount: 41.10, type: 'expense', category: 'food', date: '2026-11-16' }
-];
-let counter = 11;
-app.get('/api/transactions', (req,res)=> {
-    const formattedTransaction = transactionsData.map(item => ({
-        description: item.description,
-        amount : item.amount,
-        type : item.type,
-        category : item.category,
-        date : item.date
-    }));
-    res.status(200).send(formattedTransaction);
-});
-app.get('/api/transactions/:id', (req,res) => {
-    const { id } = req.params;
-    const transactionsId = transactionsData.find((item)=> String(item.id) === id);
-    res.status(200).send({
-        description: transactionsId.description,
-        amount : transactionsId.amount,
-        type : transactionsId.type,
-        category : transactionsId.category,
-        date : transactionsId.date
-    })
-});
-app.post('/api/transactions', (req,res)=> {
-    const {description,amount,type,category} = req.body;
-    const today = new Date;
-    const year = today.getFullYear();
-    const month= today.getMonth() + 1;
-    const day = today.getDate();
-    const date = `${year}-${month}-${day}`;
-    if (!description) {
-        return res.status(404).send({message : 'We need a description'});
-    }
-    if (!amount) {
-        return res.status(404).send({message : 'We need a amount'});
-    }
-    if (!type) {
-        return res.status(404).send({message : 'We need a type'});
-    }
-    if (!category) {
-        return res.status(404).send({message : 'We need a category'});
-    }
-    const newTransaction = {
-        id : counter,
-        description : description,
-        amount : amount,
-        type : type,
-        category : category,
-        date : date
-    }
-    counter++;
-    transactionsData.push(newTransaction);
-    res.status(201).send(newTransaction);
-    
-});
-app.put('/api/transactions/:id', (req,res)=> {
-    const { id } = req.params;
-    const {description,amount,type,category} = req.body;
-    const index = transactionsData.findIndex((item) => String(item.id) === id);
-    if (index === -1) {
-        return res.status(404).send({message : 'transaction not found'});
-    }
-    if (!description) {
-        return res.status(400).send({message : 'We need a description'});
-    }
-    if (!amount) {
-        return res.status(400).send({message : 'We need a amount'});
-    }
-    if (!type) {
-        return res.status(400).send({message : 'We need a type'});
-    }
-    if (!category) {
-        return res.status(400).send({message : 'We need a category'});
-    }
+// Checks the request body. Returns an error message, or null if everything is there.
+function validate(body) {
+    const { description, amount, type, category } = body;
+    if (!description) return 'We need a description';
+    if (!amount) return 'We need a amount';
+    if (!type) return 'We need a type';
+    if (!category) return 'We need a category';
+    return null;
+}
 
-    const updatedTransaction = {
-        id : transactionsData[index].id,
-        description : description,
-        amount : amount,
-        type : type,
-        category : category,
-        date : transactionsData[index].date
-    }
-    transactionsData[index] = updatedTransaction;
-    res.status(200).send(updatedTransaction);
+// GET all transactions
+app.get('/api/transactions', (req, res) => {
+    db.all('SELECT * FROM transactions ORDER BY date, id', [], (err, rows) => {
+        if (err) return res.status(500).send({ message: err.message });
+        res.status(200).send(rows);
+    });
 });
-app.delete('/api/transactions/:id', (req,res) => {
-    const { id } = req.params;
-    
-    const index = transactionsData.findIndex((item) => String(item.id) === id);
 
-    transactionsData.splice(index, 1);
-    res.status(200).send(transactionsData);
+// GET one transaction by id
+app.get('/api/transactions/:id', (req, res) => {
+    const { id } = req.params;
+    db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, row) => {
+        if (err) return res.status(500).send({ message: err.message });
+        // db.get gives back undefined when nothing matched
+        if (!row) return res.status(404).send({ message: 'transaction not found' });
+        res.status(200).send(row);
+    });
 });
+
+// POST a new transaction
+app.post('/api/transactions', (req, res) => {
+    const error = validate(req.body);
+    if (error) return res.status(400).send({ message: error });
+
+    const { description, amount, type, category } = req.body;
+    const sql = 'INSERT INTO transactions (description, amount, type, category) VALUES (?, ?, ?, ?)';
+
+    // Must be `function`, not an arrow, so `this.lastID` works
+    db.run(sql, [description, amount, type, category], function (err) {
+        if (err) return res.status(500).send({ message: err.message });
+
+        // Look up the new row so the response includes its id and date
+        db.get('SELECT * FROM transactions WHERE id = ?', [this.lastID], (err, row) => {
+            if (err) return res.status(500).send({ message: err.message });
+            res.status(201).send(row);
+        });
+    });
+});
+
+// PUT (update) a transaction
+app.put('/api/transactions/:id', (req, res) => {
+    const { id } = req.params;
+    const error = validate(req.body);
+    if (error) return res.status(400).send({ message: error });
+
+    const { description, amount, type, category } = req.body;
+    const sql = 'UPDATE transactions SET description = ?, amount = ?, type = ?, category = ? WHERE id = ?';
+
+    db.run(sql, [description, amount, type, category, id], function (err) {
+        if (err) return res.status(500).send({ message: err.message });
+        // this.changes = how many rows were updated. 0 means that id doesn't exist.
+        if (this.changes === 0) return res.status(404).send({ message: 'transaction not found' });
+
+        db.get('SELECT * FROM transactions WHERE id = ?', [id], (err, row) => {
+            if (err) return res.status(500).send({ message: err.message });
+            res.status(200).send(row);
+        });
+    });
+});
+
+// DELETE a transaction
+app.delete('/api/transactions/:id', (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM transactions WHERE id = ?', [id], function (err) {
+        if (err) return res.status(500).send({ message: err.message });
+        if (this.changes === 0) return res.status(404).send({ message: 'transaction not found' });
+        res.status(200).send({ message: 'transaction deleted' });
+    });
+});
+
 app.listen(
     port,
-    ()=> console.log(`app is live at http://localhost:${port}`)
+    () => console.log(`app is live at http://localhost:${port}`)
 );
